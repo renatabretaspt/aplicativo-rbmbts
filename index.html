@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RBMBTS - O Jogo Oficial (RBMSoluções)</title>
+    <title>RBMBTS - Powered by RBMSoluções</title>
+    <!-- Bibliotecas Estáveis -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+KR:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; background: #fff; overflow-x: hidden; }
-        .rbm-red { color: #E60023; }
+        body { font-family: 'Inter', sans-serif; background-color: #fff; margin: 0; padding: 0; }
         .bg-rbm-red { background-color: #E60023; }
+        .text-rbm-red { color: #E60023; }
         .border-rbm-red { border-color: #E60023; }
-        .avatar-float { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
-        .glow-red { box-shadow: 0 0 20px rgba(230, 0, 35, 0.2); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-out; }
     </style>
 </head>
 <body>
@@ -25,207 +25,159 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- SISTEMA DE TRADUÇÃO I18N ---
-        const LANGUAGES = {
-            pt: { welcome: "Bem-vindo, ARMY!", start: "INICIAR MARATONA", admin: "ADMIN", lang: "Idioma", daily: "DESAFIO DIÁRIO", explain: "Explicação da IA", streak: "Onda", level: "Nível" },
-            en: { welcome: "Welcome, ARMY!", start: "START MARATHON", admin: "ADMIN", lang: "Language", daily: "DAILY CHALLENGE", explain: "AI Explanation", streak: "Streak", level: "Level" },
-            es: { welcome: "¡Bienvenida, ARMY!", start: "INICIAR MARATÓN", admin: "ADMIN", lang: "Idioma", daily: "DESAFÍO DIARIO", explain: "Explicación IA", streak: "Racha", level: "Nivel" },
-            ko: { welcome: "환영합니다, 아미!", start: "마라톤 시작", admin: "ADMIN", lang: "언어", daily: "일일 챌린지", explain: "AI 설명", streak: "연승", level: "레벨" }
-        };
-
-        // --- BANCO DE DADOS (25 QUESTÕES) ---
-        const QUESTIONS = [
-            { id: 1, text: "Qual a data do debut oficial do BTS?", correct: "13/06/2013", options: ["13/06/2013", "12/06/2013", "13/07/2013", "09/07/2013"], ai: "Eles estrearam no M Countdown com No More Dream!", hook: "Onde tudo começou!" },
-            { id: 2, text: "Quem é o líder do BTS?", correct: "RM", options: ["RM", "Jin", "Suga", "J-Hope"], ai: "RM foi o primeiro membro da formação original.", hook: "Liderança Real!" },
-            // Adicione as outras 23 aqui seguindo o mesmo padrão...
+        // --- BANCO DE DADOS REAL (25 QUESTÕES) ---
+        const DB = [
+            { q: "Qual a data do debut oficial do BTS?", a: "13/06/2013", o: ["13/06/2013", "12/06/2013", "13/07/2013", "09/07/2013"], h: "O Início!", s: "BigHit" },
+            { q: "Quem é o líder do BTS?", a: "RM", o: ["RM", "Jin", "Suga", "J-Hope"], h: "Liderança!", s: "Perfil Oficial" },
+            { q: "Qual o nome real do V?", a: "Kim Tae-hyung", o: ["Kim Tae-hyung", "Park Ji-min", "Jeon Jung-kook", "Kim Seok-jin"], h: "Identidade!", s: "Perfil Oficial" },
+            { q: "Qual música deu o primeiro win ao BTS?", a: "I Need U", o: ["I Need U", "No More Dream", "Dope", "Danger"], h: "Vitória!", s: "The Show" },
+            { q: "Em que cidade nasceu o Jimin?", a: "Busan", o: ["Busan", "Daegu", "Gwangju", "Seul"], h: "Origens!", s: "Fansign" },
+            { q: "Qual o nome do fandom?", a: "ARMY", o: ["ARMY", "Blink", "Stay", "Once"], h: "Família!", s: "Weverse" },
+            { q: "Qual membro gosta de cozinhar?", a: "Jin", o: ["Jin", "RM", "V", "Jimin"], h: "Hobby!", s: "Eat Jin" },
+            { q: "Quem é o Golden Maknae?", a: "Jungkook", o: ["Jungkook", "V", "Jimin", "J-Hope"], h: "Talento!", s: "Run BTS" },
+            { q: "Qual a cor que o V associou ao amor?", a: "Roxo", o: ["Roxo", "Vermelho", "Azul", "Amarelo"], h: "Borahae!", s: "3rd Muster" },
+            { q: "Quem lançou a música 'Daechwita'?", a: "Agust D", o: ["Agust D", "RM", "J-Hope", "Jimin"], h: "Solo!", s: "D-2 Mixtape" },
+            { q: "Qual o nome real do Suga?", a: "Min Yoon-gi", o: ["Min Yoon-gi", "Jung Ho-seok", "Kim Nam-joon", "Park Ji-min"], h: "Gênio!", s: "Perfil Oficial" },
+            { q: "Qual música foi gravada com a Halsey?", a: "Boy With Luv", o: ["Boy With Luv", "Dynamite", "Butter", "Idol"], h: "Colaboração!", s: "Billboard" },
+            { q: "Em que ano o BTS foi à ONU pela primeira vez?", a: "2018", o: ["2018", "2017", "2019", "2020"], h: "Discurso!", s: "UNICEF" },
+            { q: "Qual o nome do reality show do BTS?", a: "Run BTS", o: ["Run BTS", "BTS GO", "Bangtan TV", "Idol Room"], h: "Diversão!", s: "Weverse" },
+            { q: "Quem é o dançarino principal?", a: "J-Hope", o: ["J-Hope", "Jin", "Suga", "RM"], h: "Dança!", s: "Hope World" },
+            { q: "Qual o nome do álbum de debut?", a: "2 Cool 4 Skool", o: ["2 Cool 4 Skool", "Dark & Wild", "Wings", "BE"], h: "História!", s: "Discografia" },
+            { q: "Qual membro toca piano muito bem?", a: "Suga", o: ["Suga", "V", "RM", "J-Hope"], h: "Piano!", s: "First Love" },
+            { q: "Onde o BTS gravou o MV de 'ON'?", a: "EUA", o: ["EUA", "Coreia", "França", "Brasil"], h: "MV!", s: "Kinetic Film" },
+            { q: "Qual o nome do Jin?", a: "Kim Seok-jin", o: ["Kim Seok-jin", "Min Yoon-gi", "Park Ji-min", "Jeon Jung-kook"], h: "Visual!", s: "Perfil Oficial" },
+            { q: "Qual a primeira música em inglês?", a: "Dynamite", o: ["Dynamite", "Butter", "Permission to Dance", "Stay Gold"], h: "#1 Billboard!", s: "Hot 100" },
+            { q: "Qual o signo do RM?", a: "Virgem", o: ["Virgem", "Leão", "Escorpião", "Sagitário"], h: "Zodíaco!", s: "Perfil" },
+            { q: "Qual o nome do BT21 do Jungkook?", a: "Cooky", o: ["Cooky", "Tata", "Chimmy", "Koya"], h: "BT21!", s: "Line Friends" },
+            { q: "Quem canta 'Epiphany'?", a: "Jin", o: ["Jin", "V", "Jimin", "Jungkook"], h: "Amor Próprio!", s: "Love Yourself" },
+            { q: "Qual cidade o V nasceu?", a: "Daegu", o: ["Daegu", "Busan", "Gwangju", "Seul"], h: "Origem!", s: "Fansign" },
+            { q: "O que o BTS prometeu ao ARMY?", a: "Stay Gold", o: ["Stay Gold", "Never stop", "Always win", "Be rich"], h: "Promessa!", s: "Discografia Japonesa" }
         ];
-        // Preenchimento automático para o teste de 25
-        for(let i=3; i<=25; i++) { QUESTIONS.push({...QUESTIONS[0], id: i, text: `Pergunta Especial ${i}: Qual o prêmio do BTS?`, ai: "Eles ganharam o mundo!"}); }
 
-        function RBMBTSApp() {
-            const [lang, setLang] = useState('pt');
-            const [gameState, setGameState] = useState('AUTH'); // AUTH, HOME, PLAYING, RESULT, ADMIN
-            const [user, setUser] = useState({ name: '', xp: 0, level: 'Trainee', lastPlayed: null, streak: 0 });
-            const [currentStep, setCurrentStep] = useState(0);
-            const [feedback, setFeedback] = useState(null);
-            const [avatarState, setAvatarState] = useState('idle'); // idle, happy, teaching, sad
+        function RBMBTS_App() {
+            const [view, setView] = useState('HOME'); // HOME, PLAYING, RESULT, ADMIN
+            const [step, setStep] = useState(0);
+            const [score, setScore] = useState(0);
+            const [selected, setSelected] = useState(null);
+            const [correct, setCorrect] = useState(null);
 
-            const t = LANGUAGES[lang];
-
-            // --- PERSISTÊNCIA: VERIFICA SE JÁ JOGOU HOJE ---
+            // Admin Shortcut via URL (?admin=true)
             useEffect(() => {
-                const savedUser = localStorage.getItem('rbmbts_user');
-                if (savedUser) {
-                    const parsed = JSON.parse(savedUser);
-                    setUser(parsed);
-                    // Lógica 24h
-                    const today = new Date().toDateString();
-                    if (parsed.lastPlayed === today) {
-                        // setGameState('HOME'); // Descomentar para travar 1 por dia
-                    }
-                }
+                if (window.location.search.includes('admin=true')) setView('ADMIN');
             }, []);
 
-            const saveUser = (newData) => {
-                const updated = { ...user, ...newData };
-                setUser(updated);
-                localStorage.setItem('rbmbts_user', JSON.stringify(updated));
+            const startQuiz = () => {
+                setStep(0);
+                setScore(0);
+                setSelected(null);
+                setCorrect(null);
+                setView('PLAYING');
             };
 
-            const handleLogin = (e) => {
-                e.preventDefault();
-                saveUser({ name: e.target.username.value, lastPlayed: null });
-                setGameState('HOME');
-            };
-
-            const handleAnswer = (opt) => {
-                if (feedback) return;
-                const isCorrect = opt === QUESTIONS[currentStep].correct;
-                setFeedback(isCorrect ? 'CORRECT' : 'WRONG');
-                setAvatarState(isCorrect ? 'happy' : 'teaching');
-                if (isCorrect) saveUser({ xp: user.xp + 100 });
+            const handleOption = (opt) => {
+                if (correct !== null) return;
+                const isRight = opt === DB[step].a;
+                setSelected(opt);
+                setCorrect(isRight);
+                if (isRight) setScore(score + 100);
             };
 
             const nextStep = () => {
-                if (currentStep < 24) {
-                    setCurrentStep(currentStep + 1);
-                    setFeedback(null);
-                    setAvatarState('idle');
+                if (step < 24) {
+                    setStep(step + 1);
+                    setSelected(null);
+                    setCorrect(null);
                 } else {
-                    const today = new Date().toDateString();
-                    saveUser({ lastPlayed: today, streak: user.streak + 1 });
-                    setGameState('RESULT');
+                    setView('RESULT');
                 }
             };
 
-            // --- COMPONENTE AVATAR DE IA ---
-            const AIAvatar = () => (
-                <div className="flex flex-col items-center mb-6">
-                    <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center border-4 border-rbm-red avatar-float glow-red relative overflow-hidden">
-                        {avatarState === 'idle' && <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Felix&backgroundColor=ffffff" />}
-                        {avatarState === 'happy' && <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aneka&backgroundColor=ffffff" />}
-                        {avatarState === 'teaching' && <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Buster&backgroundColor=ffffff" />}
-                    </div>
-                    {feedback && (
-                        <div className="mt-4 p-4 bg-white border-2 border-rbm-red rounded-2xl text-xs font-bold text-gray-700 animate-pop max-w-[250px] shadow-lg">
-                            <span className="text-rbm-red uppercase block mb-1">IA AVATAR:</span>
-                            {feedback === 'CORRECT' ? "Incrível, ARMY! Você acertou em cheio!" : QUESTIONS[currentStep].ai}
+            // TELA ADMIN
+            if (view === 'ADMIN') return (
+                <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-left font-sans">
+                    <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border-4 border-[#E60023] p-10">
+                        <h1 className="text-3xl font-black text-[#E60023] mb-6">ADMIN RBMSOLUÇÕES</h1>
+                        <div className="space-y-4">
+                            <div className="p-4 bg-red-50 rounded-xl font-bold">Domínio: rbmbts.pt</div>
+                            <div className="p-4 bg-gray-50 rounded-xl font-bold italic">Configuração: 25 Questões / Ativo</div>
+                            <button onClick={() => setView('HOME')} className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold">VOLTAR AO SITE</button>
                         </div>
-                    )}
+                    </div>
                 </div>
             );
 
-            // --- TELA DE LOGIN (AUTH) ---
-            if (gameState === 'AUTH') return (
-                <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
+            // TELA RESULTADO
+            if (view === 'RESULT') return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-white animate-fade">
                     <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-24 mb-6" />
-                    <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
-                        <h1 className="text-3xl font-black text-center text-rbm-red italic tracking-tighter">IDENTIFIQUE-SE, ARMY</h1>
-                        <input name="username" required placeholder="Seu Nome ou User" className="w-full p-5 border-2 border-gray-100 rounded-2xl outline-none focus:border-rbm-red font-bold" />
-                        <button className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200">ENTRAR</button>
-                    </form>
+                    <h1 className="text-4xl font-black text-[#E60023] mb-4 uppercase">MARATONA FINALIZADA!</h1>
+                    <div className="text-7xl font-black text-gray-900 mb-8">{score} <span className="text-2xl text-[#E60023]">XP</span></div>
+                    <button onClick={startQuiz} className="w-full max-w-xs py-5 bg-[#E60023] text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 uppercase tracking-widest">RECOMEÇAR</button>
+                    <p className="mt-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">RBMSoluções • 2024</p>
                 </div>
             );
 
-            // --- PAINEL ADMIN ---
-            if (gameState === 'ADMIN') return (
-                <div className="min-h-screen bg-gray-50 p-10">
-                    <div className="max-w-4xl mx-auto bg-white rounded-[40px] shadow-2xl p-10 border-4 border-rbm-red">
-                        <div className="flex justify-between items-center mb-10">
-                            <h1 className="text-4xl font-black text-rbm-red">ADMIN RBMSOLUÇÕES</h1>
-                            <button onClick={() => setGameState('HOME')} className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold">VOLTAR</button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div className="p-8 bg-red-50 rounded-3xl border-2 border-red-100">
-                                <h3 className="font-black text-rbm-red mb-4 uppercase">Editar Branding</h3>
-                                <input type="text" value="rbmbts.pt" className="w-full p-3 rounded-xl border border-gray-200 mb-4" />
-                                <button className="w-full py-3 bg-rbm-red text-white rounded-xl font-bold">SALVAR LOGO</button>
-                            </div>
-                            <div className="p-8 bg-gray-50 rounded-3xl">
-                                <h3 className="font-black text-gray-400 mb-4 uppercase italic">Banco de Questões</h3>
-                                <p className="text-sm font-bold">25 Questões Ativas / 150 Total</p>
-                                <button className="mt-4 w-full py-3 bg-gray-300 text-white rounded-xl font-bold cursor-not-allowed">ADICIONAR (PREMIUM)</button>
-                            </div>
-                        </div>
+            // TELA INICIAL
+            if (view === 'HOME') return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center animate-fade bg-white">
+                    <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-32 mb-6" />
+                    <h1 className="text-5xl font-black text-[#E60023] mb-2 tracking-tighter italic uppercase">RBMBTS</h1>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase mb-12 tracking-[0.4em]">Powered by RBMSoluções</p>
+                    <div className="w-full max-w-sm bg-white border-4 border-red-50 p-10 rounded-[40px] shadow-2xl shadow-red-100 flex flex-col items-center">
+                        <h2 className="font-black text-2xl mb-1 text-gray-900 tracking-tight text-center">DESAFIO DIÁRIO</h2>
+                        <p className="text-gray-400 font-bold text-xs mb-8 uppercase tracking-widest">25 Perguntas Reais</p>
+                        <button onClick={startQuiz} className="w-full py-5 bg-[#E60023] text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 uppercase tracking-widest active:scale-95 transition-transform">JOGAR AGORA</button>
                     </div>
                 </div>
             );
 
-            // --- TELA INICIAL (HOME) ---
-            if (gameState === 'HOME') return (
-                <div className="min-h-screen bg-white flex flex-col p-6 items-center justify-center animate-fade">
-                    <header className="absolute top-6 w-full px-8 flex justify-between items-center">
-                        <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-12" />
-                        <div className="flex gap-2">
-                            {Object.keys(LANGUAGES).map(l => (
-                                <button key={l} onClick={() => setLang(l)} className={`text-[10px] font-black uppercase p-2 rounded-lg ${lang === l ? 'bg-rbm-red text-white' : 'bg-gray-100'}`}>{l}</button>
-                            ))}
+            // TELA DE JOGO
+            const currentQ = DB[step];
+            return (
+                <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto relative animate-fade border-x border-gray-50 shadow-2xl">
+                    <header className="p-6 border-b border-gray-100 sticky top-0 bg-white z-20">
+                        <div className="flex justify-between items-center mb-4 px-2">
+                            <span className="text-[#E60023] font-black text-[10px] uppercase tracking-[0.2em]">Questão {step + 1}/25</span>
+                            <span className="text-gray-900 font-black text-[10px] uppercase tracking-widest">{score} XP</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                            <div className="h-full bg-[#E60023] transition-all duration-700" style={{width: `${((step + 1) / 25) * 100}%`}}></div>
                         </div>
                     </header>
 
-                    <AIAvatar />
-
-                    <div className="w-full max-w-sm text-center">
-                        <h2 className="text-3xl font-black text-gray-900 mb-1">{t.welcome}</h2>
-                        <p className="text-gray-400 font-bold text-xs uppercase mb-8">{user.name} • XP: {user.xp}</p>
-                        
-                        <div className="bg-white border-4 border-red-50 p-8 rounded-[40px] shadow-2xl mb-8">
-                            <h3 className="text-rbm-red font-black text-xl mb-4">{t.daily}</h3>
-                            <button 
-                                onClick={() => setGameState('PLAYING')}
-                                className="w-full py-5 bg-rbm-red text-white rounded-3xl font-black text-xl shadow-xl shadow-red-200"
-                            >
-                                {t.start}
-                            </button>
-                        </div>
-                        <button onClick={() => setGameState('ADMIN')} className="text-[10px] font-black text-gray-300 tracking-widest hover:text-rbm-red">{t.admin} RBMSOLUÇÕES</button>
-                    </div>
-                </div>
-            );
-
-            // --- TELA DE JOGO ---
-            const q = QUESTIONS[currentStep];
-            // Lógica de Embaralhamento de Opções
-            const shuffledOptions = useMemo(() => [...q.options].sort(() => Math.random() - 0.5), [currentStep]);
-
-            return (
-                <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto relative border-x border-gray-50">
-                    <div className="p-6 border-b border-gray-100 sticky top-0 bg-white z-20">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-rbm-red font-black text-[10px] uppercase">Questão {currentStep + 1}/25</span>
-                            <span className="text-gray-900 font-black text-[10px] uppercase">{user.xp} XP</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-rbm-red transition-all duration-700" style={{width: `${((currentStep+1)/25)*100}%`}}></div>
-                        </div>
-                    </div>
-
                     <main className="p-8 flex-grow">
-                        <AIAvatar />
                         <div className="mb-8">
-                            <p className="text-rbm-red font-black text-[10px] uppercase italic mb-2 tracking-widest">{q.hook}</p>
-                            <h2 className="text-2xl font-black text-gray-900 leading-tight tracking-tight">{q.text}</h2>
+                            <p className="text-[#E60023] font-black text-[10px] mb-2 uppercase tracking-widest italic flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-[#E60023] rounded-full"></span> {currentQ.h}
+                            </p>
+                            <h2 className="text-2xl font-black text-gray-900 leading-tight tracking-tight">{currentQ.q}</h2>
                         </div>
 
                         <div className="space-y-4">
-                            {shuffledOptions.map((opt, i) => (
+                            {currentQ.o.map((opt, i) => (
                                 <button 
                                     key={i}
-                                    onClick={() => handleAnswer(opt)}
-                                    className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all
-                                        ${selected === opt ? 'border-rbm-red bg-red-50 text-rbm-red' : 'border-gray-50 text-gray-700 hover:border-red-50'}`}
+                                    onClick={() => handleOption(opt)}
+                                    className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all duration-300 flex items-center justify-between
+                                        ${selected === opt ? (correct ? 'border-green-500 bg-green-50 text-green-700' : 'border-[#E60023] bg-red-50 text-[#E60023]') : 'border-gray-50 bg-white text-gray-700'}`}
                                 >
-                                    {opt}
-                                    {feedback && opt === q.correct && <span className="float-right text-green-500 font-black">✓</span>}
+                                    <span className="flex-1 pr-4 font-bold">{opt}</span>
+                                    {correct !== null && opt === currentQ.a && <span className="text-green-500 font-black">✓</span>}
                                 </button>
                             ))}
                         </div>
                     </main>
 
-                    {feedback && (
-                        <footer className="p-6 bg-white border-t border-gray-100 sticky bottom-0 animate-slide-up">
-                            <button onClick={nextStep} className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl uppercase shadow-xl shadow-red-100">
-                                {currentStep === 24 ? "Finalizar" : "Próxima"}
+                    {correct !== null && (
+                        <footer className="p-6 bg-white border-t border-gray-100 sticky bottom-0 shadow-2xl">
+                            <div className="mb-4 text-[10px] text-gray-400 font-bold uppercase italic tracking-tighter">
+                                <span className="text-[#E60023]">FONTE OFICIAL:</span> {currentQ.s}
+                            </div>
+                            <button 
+                                onClick={nextStep}
+                                className="w-full py-5 bg-[#E60023] text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 uppercase tracking-widest"
+                            >
+                                {step === 24 ? "VER RESULTADO" : "PRÓXIMA"}
                             </button>
                         </footer>
                     )}
@@ -234,7 +186,7 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<RBMBTSApp />);
+        root.render(<RBMBTS_App />);
     </script>
 </body>
 </html>
