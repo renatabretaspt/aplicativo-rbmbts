@@ -4,144 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RBMBTS - Powered by RBMSoluções</title>
-    <!-- Motores do App (React & Tailwind) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: white; }
-        .animate-slide-up { animation: slideUp 0.4s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        body { font-family: 'Inter', sans-serif; }
+        .bg-rbm-red { background-color: #E60023; }
+        .text-rbm-red { color: #E60023; }
+        .border-rbm-red { border-color: #E60023; }
     </style>
 </head>
-<body>
+<body class="bg-white">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-
-        // --- BANCO DE DADOS OFICIAL RBMSOLUÇÕES (Exemplo) ---
-        const QUESTIONS_DB = [
-            {
-                id: 1,
-                hook: "ARMY, você sente o orgulho no peito ao ver este palco?",
-                text: "Em qual estádio o BTS realizou seu primeiro show solo nos EUA?",
-                correct: "Citi Field",
-                options: ["Citi Field", "Rose Bowl", "MetLife Stadium", "Wembley Stadium"],
-                source: "BTS World Tour 2018"
-            },
-            // O sistema sorteará 25 perguntas aqui...
-        ];
+        const { useState, useEffect } = React;
 
         function RBMBTSApp() {
-            const [gameState, setGameState] = useState('HOME'); // HOME, PLAYING, RESULT, ADMIN
-            const [currentStep, setCurrentStep] = useState(0);
-            const [score, setScore] = useState(0);
-            const [feedback, setFeedback] = useState(null);
-            const [selected, setSelected] = useState(null);
+            const [gameState, setGameState] = useState('HOME');
 
-            // Se o usuário tentar acessar /admin via botão secreto (Simulação)
-            const goToAdmin = () => setGameState('ADMIN');
+            // Lógica para detectar /admin ou ?admin=true
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                if (window.location.pathname === '/admin' || params.get('admin') === 'true') {
+                    setGameState('ADMIN');
+                }
+            }, []);
 
+            // --- PAINEL ADMIN RBMSOLUÇÕES ---
             if (gameState === 'ADMIN') {
                 return (
-                    <div className="min-h-screen bg-gray-50 p-8">
-                        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border-2 border-[#E60023] p-8">
-                            <h1 className="text-3xl font-black text-[#E60023] mb-4">PAINEL ADMIN RBMSOLUÇÕES</h1>
-                            <p className="mb-6 text-gray-500 font-bold">Domínio: rbmbts.pt | Status: Ativo</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-6 bg-red-50 rounded-2xl">
-                                    <p className="text-sm font-bold uppercase">Preço Premium</p>
-                                    <p className="text-2xl font-black text-[#E60023]">R$ 9,99 / € 10,00</p>
+                    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                        <div className="max-w-4xl w-full bg-white rounded-[40px] shadow-2xl border-2 border-rbm-red overflow-hidden">
+                            <div className="bg-rbm-red p-8 text-white flex justify-between items-center">
+                                <div>
+                                    <h1 className="text-3xl font-black tracking-tighter">PAINEL ADMIN RBMBTS</h1>
+                                    <p className="text-xs font-bold opacity-80 uppercase tracking-widest">Controle Central RBMSoluções</p>
                                 </div>
-                                <div className="p-6 bg-gray-50 rounded-2xl">
-                                    <p className="text-sm font-bold uppercase text-gray-400">Total de Perguntas</p>
-                                    <p className="text-2xl font-black text-gray-800">150 (6 Fases)</p>
+                                <button onClick={() => window.location.href='/'} className="bg-white text-rbm-red px-6 py-2 rounded-full font-bold text-sm shadow-lg">SAIR</button>
+                            </div>
+                            
+                            <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-6">
+                                    <div className="p-6 bg-red-50 rounded-3xl border border-red-100">
+                                        <h3 className="font-black text-rbm-red mb-4 uppercase text-sm">Configuração de Maratona</h3>
+                                        <p className="text-gray-600 text-sm font-medium">Status: <span className="text-green-500 font-black">25 PERGUNTAS / ATIVO</span></p>
+                                        <p className="text-gray-600 text-sm font-medium mt-2">Dificuldade: <span className="font-black italic">Progressiva (6 Fases)</span></p>
+                                    </div>
+                                    <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                        <h3 className="font-black text-gray-400 mb-4 uppercase text-sm italic">Monetização Premium</h3>
+                                        <div className="flex gap-4">
+                                            <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase">Brasil</p>
+                                                <p className="text-xl font-black text-gray-800">R$ 9,99</p>
+                                            </div>
+                                            <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase">Global</p>
+                                                <p className="text-xl font-black text-gray-800">€ 10.00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-8 rounded-3xl border-2 border-gray-50 space-y-4">
+                                    <h3 className="font-black text-gray-800 mb-4">Branding & Logo</h3>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase">URL da Logomarca (RMBTS)</label>
+                                    <input type="text" className="w-full p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm outline-none focus:border-rbm-red" value="https://rbmbts.pt/logo.png" readOnly />
+                                    <div className="flex items-center gap-4 py-4">
+                                        <div className="w-12 h-12 bg-rbm-red rounded-xl shadow-lg border-2 border-white"></div>
+                                        <span className="font-mono text-gray-400 text-xs">#E60023</span>
+                                    </div>
+                                    <button className="w-full py-4 bg-rbm-red text-white rounded-2xl font-black shadow-xl shadow-red-100 uppercase tracking-widest text-sm hover:scale-105 transition-transform">Salvar Alterações</button>
                                 </div>
                             </div>
-                            <button onClick={() => setGameState('HOME')} className="mt-8 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold">VOLTAR AO APP</button>
                         </div>
                     </div>
                 );
             }
 
-            if (gameState === 'HOME') {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-                        <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-32 mb-6" alt="Logo" />
-                        <h1 className="text-5xl font-black text-[#E60023] mb-2 tracking-tighter">RBMBTS</h1>
-                        <p className="text-gray-400 font-bold text-xs uppercase mb-12 italic">Powered by RBMSoluções</p>
+            // --- TELA INICIAL (HOME) ---
+            return (
+                <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+                    <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" alt="RBMBTS" className="w-32 mb-6" />
+                    <h1 className="text-5xl font-black text-rbm-red mb-2 tracking-tighter">RBMBTS</h1>
+                    <p className="text-gray-400 font-bold text-[10px] uppercase mb-12 tracking-[0.3em] italic">Powered by RBMSoluções</p>
+                    
+                    <div className="w-full max-w-sm bg-white border-4 border-red-50 p-8 rounded-[40px] shadow-2xl shadow-red-100">
+                        <h2 className="font-black text-2xl mb-1 text-gray-900">MARATONA DIÁRIA</h2>
+                        <p className="text-gray-400 font-bold text-xs mb-8 uppercase tracking-widest">25 Perguntas • Fase 1</p>
                         
-                        <div className="w-full max-w-sm bg-white border-4 border-red-50 p-8 rounded-[40px] shadow-2xl shadow-red-100">
-                            <h2 className="font-black text-2xl mb-2 text-gray-900 tracking-tight">MARATONA DIÁRIA</h2>
-                            <p className="text-gray-400 font-bold text-sm mb-8">25 PERGUNTAS • FASE 1</p>
-                            
-                            <button 
-                                onClick={() => setGameState('PLAYING')}
-                                className="w-full py-5 bg-[#E60023] text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 active:scale-95 transition-transform"
-                            >
-                                JOGAR AGORA
-                            </button>
-                            <p className="mt-6 text-[10px] text-gray-300 font-bold uppercase tracking-widest leading-relaxed">
-                                1 Quiz Grátis a cada 24 horas<br/>Acesso Ilimitado por R$ 9,99
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 active:scale-95 transition-transform uppercase"
+                        >
+                            JOGAR AGORA
+                        </button>
+                        
+                        <div className="mt-8 pt-6 border-t border-gray-50">
+                            <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest leading-relaxed">
+                                1 Quiz Grátis a cada 24 horas<br/>
+                                Acesso Ilimitado: <span className="text-rbm-red italic">R$ 9,99 / € 10,00</span>
                             </p>
                         </div>
-                        <button onClick={goToAdmin} className="mt-12 text-[10px] text-gray-200 uppercase font-bold tracking-widest">Acesso Restrito Admin</button>
                     </div>
-                );
-            }
-
-            const q = QUESTIONS_DB[0]; // Exemplo de Questão 1
-
-            return (
-                <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto relative overflow-hidden">
-                    {/* Header de Progresso */}
-                    <div className="p-6 border-b border-gray-100 bg-white sticky top-0 z-10">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-[#E60023] font-black text-xs uppercase tracking-tighter">Questão {currentStep + 1}/25</span>
-                            <span className="text-gray-900 font-black text-xs">{score} XP</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#E60023] transition-all duration-500" style={{width: '4%'}}></div>
-                        </div>
-                    </div>
-
-                    <main className="p-8 flex-grow">
-                        <p className="text-[#E60023] font-bold text-xs mb-2 italic">❤️ {q.hook}</p>
-                        <h2 className="text-2xl font-black text-gray-900 leading-tight mb-8">{q.text}</h2>
-
-                        <div className="space-y-4">
-                            {q.options.map((opt, i) => (
-                                <button 
-                                    key={i}
-                                    onClick={() => {
-                                        setSelected(opt);
-                                        setFeedback(opt === q.correct ? 'CORRECT' : 'WRONG');
-                                        if(opt === q.correct) setScore(score + 100);
-                                    }}
-                                    className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all flex items-center justify-between
-                                        ${selected === opt ? 'border-[#E60023] bg-red-50 text-[#E60023]' : 'border-gray-50 text-gray-700 hover:border-red-100'}`}
-                                >
-                                    {opt}
-                                    {feedback && opt === q.correct && <span className="text-green-500">✓</span>}
-                                </button>
-                            ))}
-                        </div>
-                    </main>
-
-                    {feedback && (
-                        <div className="p-6 bg-white border-t border-gray-100 animate-slide-up sticky bottom-0">
-                            <p className="text-[10px] font-bold text-gray-400 mb-4 uppercase">Fonte Oficial: {q.source}</p>
-                            <button 
-                                onClick={() => setGameState('HOME')}
-                                className="w-full py-5 bg-[#E60023] text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200"
-                            >
-                                PRÓXIMO
-                            </button>
-                        </div>
-                    )}
+                    
+                    {/* Botão Secreto para o Diretor (Invisível para o ARMY) */}
+                    <button onClick={() => setGameState('ADMIN')} className="mt-12 opacity-5 text-[8px] uppercase font-bold tracking-[0.5em] hover:opacity-100 transition-opacity">
+                        Admin RBMSoluções
+                    </button>
                 </div>
             );
         }
