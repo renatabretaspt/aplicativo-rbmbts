@@ -1,0 +1,155 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Heart, Trophy, Timer, Lock, CheckCircle, XCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+
+// --- CONFIGURAÇÃO DA MARCA RBMSOLUÇÕES ---
+const THEME = {
+  primary: '#E60023', // Vermelho Oficial
+  white: '#FFFFFF',
+  gray: '#F3F4F6'
+};
+
+// --- SIMULAÇÃO DE BANCO DE DADOS (Exemplo de Questão) ---
+const QUESTIONS_DB = [
+  {
+    id: 1,
+    hook: "ARMY, você sente o orgulho no peito ao ver este palco?",
+    text: "Em qual estádio o BTS se tornou o primeiro artista coreano a realizar um show solo nos EUA?",
+    correct: "Citi Field",
+    falseOnes: ["Rose Bowl", "MetLife Stadium", "Wembley Stadium"],
+    level: 1,
+    source: "BTS World Tour: Love Yourself"
+  },
+  // O sistema espera 25 questões por rodada...
+];
+
+export default function RBMBTSApp() {
+  const [gameState, setGameState] = useState('HOME'); // HOME, PLAYING, RESULT, PAYWALL
+  const [currentStep, setCurrentStep] = useState(0);
+  const [score, setScore] = useState(0);
+  const [selectedId, setSelectedId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [hasPlayedToday, setHasPlayedToday] = useState(false);
+
+  // Lógica de 25 perguntas (Seleciona e Embaralha)
+  const sessionQuestions = useMemo(() => {
+    // Aqui o código pegaria 25 do DB e embaralharia
+    return QUESTIONS_DB.slice(0, 25); 
+  }, []);
+
+  // Lógica de Aleatoriedade de Respostas (1 Correta + 3 Falsas)
+  const currentOptions = useMemo(() => {
+    if (!sessionQuestions[currentStep]) return [];
+    const q = sessionQuestions[currentStep];
+    const all = [
+      { text: q.correct, isCorrect: true },
+      ...q.falseOnes.map(f => ({ text: f, isCorrect: false }))
+    ];
+    return all.sort(() => Math.random() - 0.5); // Sorteio total de posição
+  }, [currentStep, sessionQuestions]);
+
+  const handleAnswer = (option) => {
+    if (feedback) return;
+    setSelectedId(option.text);
+    setFeedback(option.isCorrect ? 'CORRECT' : 'WRONG');
+    if (option.isCorrect) setScore(score + 100);
+  };
+
+  const nextQuestion = () => {
+    if (currentStep < 24) {
+      setCurrentStep(currentStep + 1);
+      setSelectedId(null);
+      setFeedback(null);
+    } else {
+      setGameState('RESULT');
+      setHasPlayedToday(true); // Bloqueia o próximo quiz
+    }
+  };
+
+  // --- TELA INICIAL (HOME) ---
+  if (gameState === 'HOME') {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" alt="RBMBTS" className="w-32 mb-6" />
+        <h1 className="text-4xl font-black text-[#E60023] mb-2 tracking-tighter">RBMBTS</h1>
+        <p className="text-gray-400 font-bold text-xs uppercase mb-8">Autoria: RBMSoluções</p>
+        
+        <div className="bg-gray-50 p-8 rounded-3xl border-2 border-red-50 w-full max-w-sm">
+          <h2 className="font-black text-xl mb-2">MARATONA DIÁRIA</h2>
+          <p className="text-gray-500 text-sm mb-6">25 Perguntas Nível Intermediário</p>
+          
+          {hasPlayedToday ? (
+            <div className="flex flex-col items-center text-[#E60023]">
+              <Lock size={40} className="mb-2"/>
+              <p className="font-bold">Limite diário atingido!</p>
+              <button className="mt-4 text-xs underline">Vire Premium por R$ 9,99</button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setGameState('PLAYING')}
+              className="w-full py-4 bg-[#E60023] text-white rounded-2xl font-black text-lg shadow-xl shadow-red-200"
+            >
+              JOGAR AGORA
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- TELA DE JOGO (PLAYING) ---
+  return (
+    <div className="min-h-screen bg-white flex flex-col font-sans max-w-md mx-auto">
+      {/* Progresso RBMSoluções */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex justify-between text-[10px] font-black text-[#E60023] mb-2">
+          <span>QUESTÃO {currentStep + 1}/25</span>
+          <span>{score} XP</span>
+        </div>
+        <div className="h-1.5 w-full bg-gray-100 rounded-full">
+          <div className="h-full bg-[#E60023] transition-all" style={{ width: `${((currentStep+1)/25)*100}%` }} />
+        </div>
+      </div>
+
+      <main className="p-8 flex-grow">
+        <div className="mb-8">
+          <span className="text-[#E60023] font-bold text-xs flex items-center gap-1 mb-2 italic">
+            <Heart size={12} fill="currentColor"/> {sessionQuestions[currentStep].hook}
+          </span>
+          <h2 className="text-2xl font-black text-gray-900 leading-tight">
+            {sessionQuestions[currentStep].text}
+          </h2>
+        </div>
+
+        <div className="space-y-3">
+          {currentOptions.map((opt, i) => (
+            <button
+              key={i}
+              disabled={!!feedback}
+              onClick={() => handleAnswer(opt)}
+              className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all flex justify-between items-center
+                ${selectedId === opt.text ? 'border-[#E60023] bg-red-50 text-[#E60023]' : 'border-gray-100 text-gray-700'}`}
+            >
+              {opt.text}
+              {feedback && opt.isCorrect && <CheckCircle size={20} className="text-green-500" />}
+              {feedback && selectedId === opt.text && !opt.isCorrect && <XCircle size={20} className="text-[#E60023]" />}
+            </button>
+          ))}
+        </div>
+      </main>
+
+      {feedback && (
+        <footer className="p-6 bg-white border-t border-gray-100 animate-slide-up">
+           <div className="mb-4 flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase">
+             <ShieldCheck size={14} className="text-green-500"/> Fonte Oficial: {sessionQuestions[currentStep].source}
+           </div>
+           <button 
+             onClick={nextQuestion}
+             className="w-full py-5 bg-[#E60023] text-white rounded-2xl font-black text-xl flex items-center justify-center gap-2"
+           >
+             PRÓXIMO <ArrowRight />
+           </button>
+        </footer>
+      )}
+    </div>
+  );
+}
