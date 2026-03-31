@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RBMBTS - Powered by RBMSoluções</title>
+    <title>RBMBTS - O Jogo Oficial (RBMSoluções)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+KR:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #ffffff; }
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; background: #fff; overflow-x: hidden; }
+        .rbm-red { color: #E60023; }
         .bg-rbm-red { background-color: #E60023; }
-        .text-rbm-red { color: #E60023; }
         .border-rbm-red { border-color: #E60023; }
-        .animate-fade { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .avatar-float { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+        .glow-red { box-shadow: 0 0 20px rgba(230, 0, 35, 0.2); }
     </style>
 </head>
 <body>
@@ -24,151 +25,207 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- BANCO DE DATOS OFICIAL RBMSOLUÇÕES (25 QUESTÕES) ---
-        const QUESTIONS_DB = [
-            { id: 1, hook: "Momento Histórico!", text: "Em qual estádio o BTS realizou seu primeiro show solo nos EUA?", correct: "Citi Field", options: ["Citi Field", "Rose Bowl", "MetLife Stadium", "Wembley Stadium"], source: "Love Yourself Tour" },
-            { id: 2, hook: "Você é Army das antigas?", text: "Qual foi a data exata do debut do BTS?", correct: "13 de Junho de 2013", options: ["13 de Junho de 2013", "12 de Junho de 2013", "13 de Julho de 2013", "09 de Junho de 2013"], source: "BigHit Official" },
-            { id: 3, hook: "Liderança RM!", text: "Qual é o nome real do líder do grupo, RM?", correct: "Kim Nam-joon", options: ["Kim Nam-joon", "Kim Seok-jin", "Min Yoon-gi", "Jung Ho-seok"], source: "Perfil Oficial" },
-            { id: 4, hook: "Hino do Fandom!", text: "Qual música deu ao BTS o seu primeiro 'Win' em programas de música?", correct: "I Need U", options: ["I Need U", "No More Dream", "Boy In Luv", "Dope"], source: "The Show 2015" },
-            { id: 5, hook: "Mundo da Moda!", text: "Em 2021, o BTS foi nomeado embaixador global de qual grife de luxo?", correct: "Louis Vuitton", options: ["Louis Vuitton", "Gucci", "Dior", "Prada"], source: "Press Release" },
-            // ... (O sistema simula 25 questões aqui para o preview)
+        // --- SISTEMA DE TRADUÇÃO I18N ---
+        const LANGUAGES = {
+            pt: { welcome: "Bem-vindo, ARMY!", start: "INICIAR MARATONA", admin: "ADMIN", lang: "Idioma", daily: "DESAFIO DIÁRIO", explain: "Explicação da IA", streak: "Onda", level: "Nível" },
+            en: { welcome: "Welcome, ARMY!", start: "START MARATHON", admin: "ADMIN", lang: "Language", daily: "DAILY CHALLENGE", explain: "AI Explanation", streak: "Streak", level: "Level" },
+            es: { welcome: "¡Bienvenida, ARMY!", start: "INICIAR MARATÓN", admin: "ADMIN", lang: "Idioma", daily: "DESAFÍO DIARIO", explain: "Explicación IA", streak: "Racha", level: "Nivel" },
+            ko: { welcome: "환영합니다, 아미!", start: "마라톤 시작", admin: "ADMIN", lang: "언어", daily: "일일 챌린지", explain: "AI 설명", streak: "연승", level: "레벨" }
+        };
+
+        // --- BANCO DE DADOS (25 QUESTÕES) ---
+        const QUESTIONS = [
+            { id: 1, text: "Qual a data do debut oficial do BTS?", correct: "13/06/2013", options: ["13/06/2013", "12/06/2013", "13/07/2013", "09/07/2013"], ai: "Eles estrearam no M Countdown com No More Dream!", hook: "Onde tudo começou!" },
+            { id: 2, text: "Quem é o líder do BTS?", correct: "RM", options: ["RM", "Jin", "Suga", "J-Hope"], ai: "RM foi o primeiro membro da formação original.", hook: "Liderança Real!" },
+            // Adicione as outras 23 aqui seguindo o mesmo padrão...
         ];
-        // Preenchendo o restante para completar 25
-        for(let i=6; i<=25; i++) {
-            QUESTIONS_DB.push({
-                id: i, hook: "Desafio RBMSoluções!", text: `Pergunta de nível técnico ${i}: Qual o recorde do BTS no Guinness?`, correct: "Mais engajamento no Twitter", 
-                options: ["Mais engajamento no Twitter", "Mais álbuns vendidos no Japão", "Maior tempo em turnê", "Mais membros em um grupo"], source: "Guinness World Records"
-            });
-        }
+        // Preenchimento automático para o teste de 25
+        for(let i=3; i<=25; i++) { QUESTIONS.push({...QUESTIONS[0], id: i, text: `Pergunta Especial ${i}: Qual o prêmio do BTS?`, ai: "Eles ganharam o mundo!"}); }
 
         function RBMBTSApp() {
-            const [gameState, setGameState] = useState('HOME');
+            const [lang, setLang] = useState('pt');
+            const [gameState, setGameState] = useState('AUTH'); // AUTH, HOME, PLAYING, RESULT, ADMIN
+            const [user, setUser] = useState({ name: '', xp: 0, level: 'Trainee', lastPlayed: null, streak: 0 });
             const [currentStep, setCurrentStep] = useState(0);
-            const [score, setScore] = useState(0);
             const [feedback, setFeedback] = useState(null);
-            const [selected, setSelected] = useState(null);
+            const [avatarState, setAvatarState] = useState('idle'); // idle, happy, teaching, sad
 
+            const t = LANGUAGES[lang];
+
+            // --- PERSISTÊNCIA: VERIFICA SE JÁ JOGOU HOJE ---
             useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                if (window.location.pathname === '/admin' || params.get('admin') === 'true') {
-                    setGameState('ADMIN');
+                const savedUser = localStorage.getItem('rbmbts_user');
+                if (savedUser) {
+                    const parsed = JSON.parse(savedUser);
+                    setUser(parsed);
+                    // Lógica 24h
+                    const today = new Date().toDateString();
+                    if (parsed.lastPlayed === today) {
+                        // setGameState('HOME'); // Descomentar para travar 1 por dia
+                    }
                 }
             }, []);
 
-            const handleAnswer = (opt) => {
-                if (feedback) return;
-                setSelected(opt);
-                const isCorrect = opt === QUESTIONS_DB[currentStep].correct;
-                setFeedback(isCorrect ? 'CORRECT' : 'WRONG');
-                if (isCorrect) setScore(score + 100);
+            const saveUser = (newData) => {
+                const updated = { ...user, ...newData };
+                setUser(updated);
+                localStorage.setItem('rbmbts_user', JSON.stringify(updated));
             };
 
-            const nextQuestion = () => {
+            const handleLogin = (e) => {
+                e.preventDefault();
+                saveUser({ name: e.target.username.value, lastPlayed: null });
+                setGameState('HOME');
+            };
+
+            const handleAnswer = (opt) => {
+                if (feedback) return;
+                const isCorrect = opt === QUESTIONS[currentStep].correct;
+                setFeedback(isCorrect ? 'CORRECT' : 'WRONG');
+                setAvatarState(isCorrect ? 'happy' : 'teaching');
+                if (isCorrect) saveUser({ xp: user.xp + 100 });
+            };
+
+            const nextStep = () => {
                 if (currentStep < 24) {
                     setCurrentStep(currentStep + 1);
                     setFeedback(null);
-                    setSelected(null);
+                    setAvatarState('idle');
                 } else {
+                    const today = new Date().toDateString();
+                    saveUser({ lastPlayed: today, streak: user.streak + 1 });
                     setGameState('RESULT');
                 }
             };
 
-            // --- TELA ADMIN ---
-            if (gameState === 'ADMIN') {
-                return (
-                    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-                        <div className="w-full max-w-4xl bg-white rounded-[40px] shadow-2xl border-2 border-rbm-red overflow-hidden">
-                            <div className="bg-rbm-red p-8 text-white flex justify-between items-center">
-                                <h1 className="text-3xl font-black">PAINEL RBMSOLUÇÕES</h1>
-                                <button onClick={() => setGameState('HOME')} className="bg-white text-rbm-red px-6 py-2 rounded-full font-bold">SAIR</button>
+            // --- COMPONENTE AVATAR DE IA ---
+            const AIAvatar = () => (
+                <div className="flex flex-col items-center mb-6">
+                    <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center border-4 border-rbm-red avatar-float glow-red relative overflow-hidden">
+                        {avatarState === 'idle' && <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Felix&backgroundColor=ffffff" />}
+                        {avatarState === 'happy' && <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aneka&backgroundColor=ffffff" />}
+                        {avatarState === 'teaching' && <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Buster&backgroundColor=ffffff" />}
+                    </div>
+                    {feedback && (
+                        <div className="mt-4 p-4 bg-white border-2 border-rbm-red rounded-2xl text-xs font-bold text-gray-700 animate-pop max-w-[250px] shadow-lg">
+                            <span className="text-rbm-red uppercase block mb-1">IA AVATAR:</span>
+                            {feedback === 'CORRECT' ? "Incrível, ARMY! Você acertou em cheio!" : QUESTIONS[currentStep].ai}
+                        </div>
+                    )}
+                </div>
+            );
+
+            // --- TELA DE LOGIN (AUTH) ---
+            if (gameState === 'AUTH') return (
+                <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
+                    <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-24 mb-6" />
+                    <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
+                        <h1 className="text-3xl font-black text-center text-rbm-red italic tracking-tighter">IDENTIFIQUE-SE, ARMY</h1>
+                        <input name="username" required placeholder="Seu Nome ou User" className="w-full p-5 border-2 border-gray-100 rounded-2xl outline-none focus:border-rbm-red font-bold" />
+                        <button className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200">ENTRAR</button>
+                    </form>
+                </div>
+            );
+
+            // --- PAINEL ADMIN ---
+            if (gameState === 'ADMIN') return (
+                <div className="min-h-screen bg-gray-50 p-10">
+                    <div className="max-w-4xl mx-auto bg-white rounded-[40px] shadow-2xl p-10 border-4 border-rbm-red">
+                        <div className="flex justify-between items-center mb-10">
+                            <h1 className="text-4xl font-black text-rbm-red">ADMIN RBMSOLUÇÕES</h1>
+                            <button onClick={() => setGameState('HOME')} className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold">VOLTAR</button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-8">
+                            <div className="p-8 bg-red-50 rounded-3xl border-2 border-red-100">
+                                <h3 className="font-black text-rbm-red mb-4 uppercase">Editar Branding</h3>
+                                <input type="text" value="rbmbts.pt" className="w-full p-3 rounded-xl border border-gray-200 mb-4" />
+                                <button className="w-full py-3 bg-rbm-red text-white rounded-xl font-bold">SALVAR LOGO</button>
                             </div>
-                            <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                                <div className="bg-red-50 p-6 rounded-3xl">
-                                    <h3 className="font-black text-rbm-red uppercase mb-2 text-sm">Status da Maratona</h3>
-                                    <p className="font-bold text-gray-700">25 Perguntas • Ativo em rbmbts.pt</p>
-                                </div>
-                                <div className="bg-gray-50 p-6 rounded-3xl">
-                                    <h3 className="font-black text-gray-400 uppercase mb-2 text-sm">Faturamento</h3>
-                                    <p className="font-bold text-gray-700">Premium: R$ 9,99 / € 10,00</p>
-                                </div>
+                            <div className="p-8 bg-gray-50 rounded-3xl">
+                                <h3 className="font-black text-gray-400 mb-4 uppercase italic">Banco de Questões</h3>
+                                <p className="text-sm font-bold">25 Questões Ativas / 150 Total</p>
+                                <button className="mt-4 w-full py-3 bg-gray-300 text-white rounded-xl font-bold cursor-not-allowed">ADICIONAR (PREMIUM)</button>
                             </div>
                         </div>
                     </div>
-                );
-            }
+                </div>
+            );
 
-            // --- TELA DE RESULTADO ---
-            if (gameState === 'RESULT') {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-white">
-                        <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-24 mb-6" />
-                        <h1 className="text-4xl font-black text-rbm-red mb-2 uppercase">Fim da Maratona!</h1>
-                        <p className="text-gray-500 font-bold mb-8">Sua pontuação final na RBMBTS:</p>
-                        <div className="text-6xl font-black text-gray-900 mb-12">{score} XP</div>
-                        <button onClick={() => window.location.reload()} className="w-full max-w-xs py-5 bg-rbm-red text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200">RECOMEÇAR</button>
-                    </div>
-                );
-            }
-
-            // --- TELA INICIAL ---
-            if (gameState === 'HOME') {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center animate-fade">
-                        <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-32 mb-6" />
-                        <h1 className="text-5xl font-black text-rbm-red mb-2 tracking-tighter italic">RBMBTS</h1>
-                        <p className="text-gray-400 font-bold text-[10px] uppercase mb-12 tracking-[0.3em]">Powered by RBMSoluções</p>
-                        <div className="w-full max-w-sm bg-white border-4 border-red-50 p-8 rounded-[40px] shadow-2xl shadow-red-100">
-                            <h2 className="font-black text-2xl mb-1">DESAFIO DIÁRIO</h2>
-                            <p className="text-gray-400 font-bold text-xs mb-8 uppercase">25 Perguntas Reais</p>
-                            <button onClick={() => setGameState('PLAYING')} className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 uppercase">JOGAR AGORA</button>
+            // --- TELA INICIAL (HOME) ---
+            if (gameState === 'HOME') return (
+                <div className="min-h-screen bg-white flex flex-col p-6 items-center justify-center animate-fade">
+                    <header className="absolute top-6 w-full px-8 flex justify-between items-center">
+                        <img src="https://i.postimg.cc/T3m8C3Ym/rbmbts-logo.png" className="w-12" />
+                        <div className="flex gap-2">
+                            {Object.keys(LANGUAGES).map(l => (
+                                <button key={l} onClick={() => setLang(l)} className={`text-[10px] font-black uppercase p-2 rounded-lg ${lang === l ? 'bg-rbm-red text-white' : 'bg-gray-100'}`}>{l}</button>
+                            ))}
                         </div>
+                    </header>
+
+                    <AIAvatar />
+
+                    <div className="w-full max-w-sm text-center">
+                        <h2 className="text-3xl font-black text-gray-900 mb-1">{t.welcome}</h2>
+                        <p className="text-gray-400 font-bold text-xs uppercase mb-8">{user.name} • XP: {user.xp}</p>
+                        
+                        <div className="bg-white border-4 border-red-50 p-8 rounded-[40px] shadow-2xl mb-8">
+                            <h3 className="text-rbm-red font-black text-xl mb-4">{t.daily}</h3>
+                            <button 
+                                onClick={() => setGameState('PLAYING')}
+                                className="w-full py-5 bg-rbm-red text-white rounded-3xl font-black text-xl shadow-xl shadow-red-200"
+                            >
+                                {t.start}
+                            </button>
+                        </div>
+                        <button onClick={() => setGameState('ADMIN')} className="text-[10px] font-black text-gray-300 tracking-widest hover:text-rbm-red">{t.admin} RBMSOLUÇÕES</button>
                     </div>
-                );
-            }
+                </div>
+            );
 
             // --- TELA DE JOGO ---
-            const currentQuestion = QUESTIONS_DB[currentStep];
+            const q = QUESTIONS[currentStep];
+            // Lógica de Embaralhamento de Opções
+            const shuffledOptions = useMemo(() => [...q.options].sort(() => Math.random() - 0.5), [currentStep]);
 
             return (
-                <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto animate-fade">
-                    {/* Header RBMSoluções */}
+                <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto relative border-x border-gray-50">
                     <div className="p-6 border-b border-gray-100 sticky top-0 bg-white z-20">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-rbm-red font-black text-[10px] uppercase tracking-widest">Questão {currentStep + 1}/25</span>
-                            <span className="text-gray-900 font-black text-xs uppercase">{score} XP</span>
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-rbm-red font-black text-[10px] uppercase">Questão {currentStep + 1}/25</span>
+                            <span className="text-gray-900 font-black text-[10px] uppercase">{user.xp} XP</span>
                         </div>
                         <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-rbm-red transition-all duration-500" style={{width: `${((currentStep+1)/25)*100}%`}}></div>
+                            <div className="h-full bg-rbm-red transition-all duration-700" style={{width: `${((currentStep+1)/25)*100}%`}}></div>
                         </div>
                     </div>
 
                     <main className="p-8 flex-grow">
-                        <p className="text-rbm-red font-bold text-xs mb-2 italic">❤️ {currentQuestion.hook}</p>
-                        <h2 className="text-2xl font-black text-gray-900 leading-tight mb-8">{currentQuestion.text}</h2>
+                        <AIAvatar />
+                        <div className="mb-8">
+                            <p className="text-rbm-red font-black text-[10px] uppercase italic mb-2 tracking-widest">{q.hook}</p>
+                            <h2 className="text-2xl font-black text-gray-900 leading-tight tracking-tight">{q.text}</h2>
+                        </div>
 
                         <div className="space-y-4">
-                            {currentQuestion.options.map((opt, i) => (
+                            {shuffledOptions.map((opt, i) => (
                                 <button 
                                     key={i}
                                     onClick={() => handleAnswer(opt)}
-                                    className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all flex items-center justify-between
+                                    className={`w-full p-5 text-left rounded-2xl border-2 font-bold transition-all
                                         ${selected === opt ? 'border-rbm-red bg-red-50 text-rbm-red' : 'border-gray-50 text-gray-700 hover:border-red-50'}`}
                                 >
                                     {opt}
-                                    {feedback && opt === currentQuestion.correct && <span className="text-green-500 text-xl font-black">✓</span>}
+                                    {feedback && opt === q.correct && <span className="float-right text-green-500 font-black">✓</span>}
                                 </button>
                             ))}
                         </div>
                     </main>
 
                     {feedback && (
-                        <footer className="p-6 bg-white border-t border-gray-100 animate-slide-up sticky bottom-0">
-                            <p className="text-[10px] font-bold text-gray-400 mb-4 uppercase italic">Fonte Oficial: {currentQuestion.source}</p>
-                            <button 
-                                onClick={nextQuestion}
-                                className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 uppercase"
-                            >
-                                {currentStep === 24 ? "FINALIZAR" : "PRÓXIMA PERGUNTA"}
+                        <footer className="p-6 bg-white border-t border-gray-100 sticky bottom-0 animate-slide-up">
+                            <button onClick={nextStep} className="w-full py-5 bg-rbm-red text-white rounded-2xl font-black text-xl uppercase shadow-xl shadow-red-100">
+                                {currentStep === 24 ? "Finalizar" : "Próxima"}
                             </button>
                         </footer>
                     )}
